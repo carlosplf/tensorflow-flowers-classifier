@@ -4,6 +4,7 @@ import os
 import PIL
 import tensorflow as tf
 import pathlib
+import argparse
 
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -11,11 +12,20 @@ from tensorflow.keras.models import Sequential
 
 
 # Some Definitions
-TRAINING_EPOCHS = 60
+TRAINING_EPOCHS = 2
 BATCH_SIZE = 32
 IMG_HEIGHT = 180
 IMG_WIDTH = 180
 AUTOTUNE = tf.data.AUTOTUNE
+MODEL_SAVE_PATH = "./model_save/weights"
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-t", "--train", type=int,
+                    help="Train the model using N epochs.")
+parser.add_argument("-p", "--predict", type=str,
+                    help="Predict an image class. -p <IMG_PATH>")
+args = parser.parse_args()
 
 
 def download_dataset():
@@ -63,8 +73,7 @@ def tune_models(train_ds, val_ds):
 
 def create_model(num_classes):
 
-    # Need to run these layers on CPU, because it's not implemented yet
-    # on Appl M1 GPU
+    # Need to run these layers on CPU, because it's not implemented yet on Appl M1 GPU
     with tf.device('/CPU:0'):
         data_augmentation = keras.Sequential(
             [
@@ -107,22 +116,17 @@ def train_model(model, train_ds, val_ds):
     return history, model
 
 
-def predict(model, img_url, img_filename):
+def predict_from_file(model, img_filename):
     """
-    Fetch image and predict using the trained Model.
+    Load an image and predict using the trained Model.
     Args:
         model: Tensorflow trained model
-        img_url: URL path.
-        img_filename: Disk img filename to be saved.
+        img_filename: name of the img file to be loaded.
     Return: None.
     """
 
-    print("Predicting image {} from {}".format(img_filename, img_url))
-    
-    img_path = tf.keras.utils.get_file(img_filename, origin=img_url)
-
     img = tf.keras.utils.load_img(
-        img_path, target_size=(IMG_HEIGHT, IMG_WIDTH)
+        img_filename, target_size=(IMG_HEIGHT, IMG_WIDTH)
     )
     img_array = tf.keras.utils.img_to_array(img)
     img_array = tf.expand_dims(img_array, 0)
@@ -131,33 +135,56 @@ def predict(model, img_url, img_filename):
     score = tf.nn.softmax(predictions[0])
 
     print(
-        "Predict: This image most likely belongs to {} with a {:.2f} percent confidence."
+        "PREDICT: This image most likely belongs to {} with a {:.2f} percent confidence."
         .format(class_names[np.argmax(score)], 100 * np.max(score))
     )
 
 
+def save_model(model):
+    model.save_weights(MODEL_SAVE_PATH)
+    print("Model saved.")
+
+
+def load_model(model):
+    saved_model = model.load_weights(MODEL_SAVE_PATH)
+    print('Model loaded.')
+    return saved_model
+
+
 if __name__ == "__main__":
-    data_dir = download_dataset()
-    check_dataset(data_dir)
-    train_ds = create_train_dataset(data_dir)
-    class_names = train_ds.class_names
-    val_ds = create_validation_dataset(data_dir)
-    train_ds, val_ds = tune_models(train_ds, val_ds)
 
-    num_classes = len(class_names)
+    if args.train:
+        TRAINING_EPOCHS = args.train
+        print("Starting training...")
+        data_dir = download_dataset()
+        check_dataset(data_dir)
+        train_ds = create_train_dataset(data_dir)
+        class_names = train_ds.class_names
+        val_ds = create_validation_dataset(data_dir)
+        train_ds, val_ds = tune_models(train_ds, val_ds)
 
-    model = create_model(num_classes)
+        num_classes = len(class_names)
 
-    history, model = train_model(model, train_ds, val_ds)
+        model = create_model(num_classes)
 
-    sunflower_url = "https://storage.googleapis.com/download.tensorflow.org/example_images/592px-Red_sunflower.jpg"
-    rose_url = "https://upload.wikimedia.org/wikipedia/commons/8/8b/Rose_flower.jpg"
-    tulips_url = "https://www.ifpe.edu.br/campus/recife/noticias/tulips.jpg"
-    tulips_2_url = "https://upload.wikimedia.org/wikipedia/commons/2/23/Red_Tulips.jpg"
-    dandelion_url = "https://upload.wikimedia.org/wikipedia/commons/6/65/Ripe_fruits_by_Common_Dandelion.jpg"
+        history, model = train_model(model, train_ds, val_ds)
+        
+        save_model(model)
+        
+        print("Finished training.")
 
-    predict(model, sunflower_url, "sunflower_img")
-    predict(model, rose_url, "rose_img")
-    predict(model, tulips_url, "tulips_img")
-    predict(model, tulips_2_url, "tulips_2_img")
-    predict(model, dandelion_url, "dandelion_img")
+    if args.predict:
+        print("Predicting images...")
+
+        # TODO: Loading train_ds just to get number of classes. Need to change that.
+        data_dir = download_dataset()
+        train_ds = create_train_dataset(data_dir)
+        class_names = train_ds.class_names
+        num_classes = len(class_names)
+        
+        model = create_model(num_classes)
+        load_model(model)
+        
+        predict_from_file(model, args.predict) 
+        
+        print("Finisihed predictions.")
