@@ -11,7 +11,7 @@ class SequentialModel:
         self.model = None
 
     def build(self, img_height, img_width, num_classes):
-        # Need to run these layers on CPU, because it's not implemented yet on Appl M1 GPU
+        # Need to run these layers on CPU, because it's not implemented yet on Apple M1 GPU
         with tf.device('/CPU:0'):
             data_augmentation = keras.Sequential(
                 [

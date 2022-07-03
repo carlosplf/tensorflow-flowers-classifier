@@ -1,6 +1,6 @@
 # Learning Tensorflow
 
-Flowers images classifier based on Tensorflow tutorial.
+Flower image classifier based on Tensorflow tutorial.
 
 ### How to run
 
