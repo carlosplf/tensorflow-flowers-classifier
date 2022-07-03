@@ -9,6 +9,8 @@ __pycache__/
 # Saved model
 model_save/*
 
+.DS_Store
+
 # Distribution / packaging
 .Python
 build/

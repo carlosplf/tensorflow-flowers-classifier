@@ -25,6 +25,9 @@ MODEL_SAVE_PATH = "./model_save/weights"
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--train", type=int,
                     help="Train the model using N epochs.")
+parser.add_argument("--nosave",
+                    help="Set no_save flag. Trained models won't be saved.",
+                    action="store_true")
 parser.add_argument("-p", "--predict", type=str,
                     help="Predict an image class. -p <IMG_PATH>")
 args = parser.parse_args()
@@ -131,7 +134,8 @@ if __name__ == "__main__":
 
         history = train_model(seq_model, train_ds, val_ds)
         
-        seq_model.save(MODEL_SAVE_PATH) 
+        if not args.nosave:
+            seq_model.save(MODEL_SAVE_PATH) 
 
         print("Finished training.")
 
