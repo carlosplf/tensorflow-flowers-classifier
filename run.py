@@ -10,6 +10,8 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
 
+from models.SequentialModel import SequentialModel
+
 
 # Some Definitions
 TRAINING_EPOCHS = 2
@@ -46,7 +48,7 @@ def create_train_dataset(data_dir):
         data_dir,
         validation_split=0.2,
         subset="training",
-        seed=123,
+        seed=102030,
         image_size=(IMG_HEIGHT, IMG_WIDTH),
         batch_size=BATCH_SIZE
     )
@@ -72,55 +74,26 @@ def tune_models(train_ds, val_ds):
 
 
 def create_model(num_classes):
-
-    # Need to run these layers on CPU, because it's not implemented yet on Appl M1 GPU
-    with tf.device('/CPU:0'):
-        data_augmentation = keras.Sequential(
-            [
-                layers.experimental.preprocessing.RandomFlip("horizontal_and_vertical", input_shape = (IMG_HEIGHT, IMG_WIDTH, 3)),
-                layers.experimental.preprocessing.RandomRotation(0.2),
-                layers.experimental.preprocessing.RandomZoom(0.2)
-            ]
-        )
-
-    model = Sequential([
-        data_augmentation,
-        layers.Rescaling(1./255, input_shape=(IMG_HEIGHT, IMG_WIDTH, 3)),
-        layers.Conv2D(16, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
-        layers.Conv2D(32, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
-        layers.Conv2D(64, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
-        layers.Flatten(),
-        layers.Dense(128, activation='relu'),
-        layers.Dense(num_classes)
-    ])
-
-    model.compile(
-        optimizer='adam',
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        metrics=['accuracy']
-    )
-
-    return model
+    seq_model = SequentialModel()
+    seq_model.build(IMG_HEIGHT, IMG_WIDTH, num_classes)
+    return seq_model
 
 
-def train_model(model, train_ds, val_ds):
+def train_model(seq_model, train_ds, val_ds):
     epochs = TRAINING_EPOCHS
-    history = model.fit(
+    history = seq_model.model.fit(
         train_ds,
         validation_data=val_ds,
         epochs=epochs
     )
-    return history, model
+    return history
 
 
-def predict_from_file(model, img_filename):
+def predict_from_file(seq_model, img_filename):
     """
     Load an image and predict using the trained Model.
     Args:
-        model: Tensorflow trained model
+        seq_model: SequentialModel class instance.
         img_filename: name of the img file to be loaded.
     Return: None.
     """
@@ -131,24 +104,13 @@ def predict_from_file(model, img_filename):
     img_array = tf.keras.utils.img_to_array(img)
     img_array = tf.expand_dims(img_array, 0)
 
-    predictions = model.predict(img_array)
+    predictions = seq_model.model.predict(img_array)
     score = tf.nn.softmax(predictions[0])
 
     print(
         "PREDICT: This image most likely belongs to {} with a {:.2f} percent confidence."
         .format(class_names[np.argmax(score)], 100 * np.max(score))
     )
-
-
-def save_model(model):
-    model.save_weights(MODEL_SAVE_PATH)
-    print("Model saved.")
-
-
-def load_model(model):
-    saved_model = model.load_weights(MODEL_SAVE_PATH)
-    print('Model loaded.')
-    return saved_model
 
 
 if __name__ == "__main__":
@@ -165,12 +127,12 @@ if __name__ == "__main__":
 
         num_classes = len(class_names)
 
-        model = create_model(num_classes)
+        seq_model = create_model(num_classes)
 
-        history, model = train_model(model, train_ds, val_ds)
+        history = train_model(seq_model, train_ds, val_ds)
         
-        save_model(model)
-        
+        seq_model.save(MODEL_SAVE_PATH) 
+
         print("Finished training.")
 
     if args.predict:
@@ -182,9 +144,11 @@ if __name__ == "__main__":
         class_names = train_ds.class_names
         num_classes = len(class_names)
         
-        model = create_model(num_classes)
-        load_model(model)
+        seq_model = create_model(num_classes)
+
+        # Load model weights from Tensorflow saving.
+        seq_model.load(MODEL_SAVE_PATH)
         
-        predict_from_file(model, args.predict) 
+        predict_from_file(seq_model, args.predict) 
         
         print("Finisihed predictions.")
