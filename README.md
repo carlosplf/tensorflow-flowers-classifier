@@ -1,4 +1,4 @@
-# Learning Tensorflow
+# Tensorflow Flowers Classifier
 
 Flower image classifier based on Tensorflow tutorial.
 
