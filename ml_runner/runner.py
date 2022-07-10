@@ -10,7 +10,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
 
-from models.SequentialModel import SequentialModel
+from ml_runner.models.SequentialModel import SequentialModel
 
 
 # Some Definitions
@@ -41,7 +41,7 @@ def download_dataset():
 
 
 def check_dataset(data_dir):
-    print("Checking dataseti size...")
+    print("Checking dataset size...")
     image_count = len(list(data_dir.glob('*/*.jpg')))
     print("Dataset size: ", image_count)
 
@@ -82,12 +82,11 @@ def create_model(num_classes):
     return seq_model
 
 
-def train_model(seq_model, train_ds, val_ds):
-    epochs = TRAINING_EPOCHS
+def train_model(n_epochs, seq_model, train_ds, val_ds):
     history = seq_model.model.fit(
         train_ds,
         validation_data=val_ds,
-        epochs=epochs
+        epochs=n_epochs
     )
     return history
 
@@ -115,44 +114,59 @@ def predict_from_file(seq_model, img_filename):
         .format(class_names[np.argmax(score)], 100 * np.max(score))
     )
 
+    return [class_names[np.argmax(score)], 100 * np.max(score)]
+
+
+def run_training(n_epochs):
+    
+    print("Starting training...")
+   
+    data_dir = download_dataset()
+    check_dataset(data_dir)
+    train_ds = create_train_dataset(data_dir)
+    class_names = train_ds.class_names
+    val_ds = create_validation_dataset(data_dir)
+    train_ds, val_ds = tune_models(train_ds, val_ds)
+
+    num_classes = len(class_names)
+
+    seq_model = create_model(num_classes)
+
+    history = train_model(n_epochs, seq_model, train_ds, val_ds)
+    
+    if not args.nosave:
+        seq_model.save(MODEL_SAVE_PATH) 
+
+    print("Finished training.")
+
+    return history.history
+
+
+def run_predict(filename):
+
+    print("Predicting images...")
+
+    # TODO: Loading train_ds just to get number of classes. Need to change that.
+    data_dir = download_dataset()
+    train_ds = create_train_dataset(data_dir)
+    class_names = train_ds.class_names
+    num_classes = len(class_names)
+    
+    seq_model = create_model(num_classes)
+
+    # Load model weights from Tensorflow saving.
+    seq_model.load(MODEL_SAVE_PATH)
+    
+    predict_from_file(seq_model, filename) 
+    
+    print("Finisihed predictions.")
+
+
 
 if __name__ == "__main__":
 
     if args.train:
-        TRAINING_EPOCHS = args.train
-        print("Starting training...")
-        data_dir = download_dataset()
-        check_dataset(data_dir)
-        train_ds = create_train_dataset(data_dir)
-        class_names = train_ds.class_names
-        val_ds = create_validation_dataset(data_dir)
-        train_ds, val_ds = tune_models(train_ds, val_ds)
-
-        num_classes = len(class_names)
-
-        seq_model = create_model(num_classes)
-
-        history = train_model(seq_model, train_ds, val_ds)
-        
-        if not args.nosave:
-            seq_model.save(MODEL_SAVE_PATH) 
-
-        print("Finished training.")
+        run_training(args.train)
 
     if args.predict:
-        print("Predicting images...")
-
-        # TODO: Loading train_ds just to get number of classes. Need to change that.
-        data_dir = download_dataset()
-        train_ds = create_train_dataset(data_dir)
-        class_names = train_ds.class_names
-        num_classes = len(class_names)
-        
-        seq_model = create_model(num_classes)
-
-        # Load model weights from Tensorflow saving.
-        seq_model.load(MODEL_SAVE_PATH)
-        
-        predict_from_file(seq_model, args.predict) 
-        
-        print("Finisihed predictions.")
+        run_predict(args.predict)
