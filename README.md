@@ -8,10 +8,14 @@ Note: some requirements are for Apple M1 chip.
 
 `pip install -r requirements.txt`
 
-`python run.py --help` to access the Help menu.
+The software contains a RUN file in `ml_runner` folder. The `runner.py` can be called by the Flask API, or manually.
 
-`python run.py -t <N_EPOCHS>` to train the model and save the weights.
+##### Running manually
+
+`python runner.py --help` to access the Help menu.
+
+`python runner.py -t <N_EPOCHS>` to train the model and save the weights.
 If you don't want to save the weights, add the `--nosave` option.
 Note that when predicting, the system will try to load saved weights.
 
-`python run.py -p <image_path>` to ask the Model to classify some flower image.
+`python runner.py -p <image_path>` to ask the Model to classify some flower image.
