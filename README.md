@@ -2,7 +2,7 @@
 
 Flower image classifier based on Tensorflow tutorial.
 
-### How to run
+## How to run
 
 Note: some requirements are for Apple M1 chip.
 
@@ -10,7 +10,7 @@ Note: some requirements are for Apple M1 chip.
 
 The software contains a RUN file in `ml_runner` folder. The `runner.py` can be called by the Flask API, or manually.
 
-##### Running manually
+#### Running manually:
 
 `python runner.py --help` to access the Help menu.
 
