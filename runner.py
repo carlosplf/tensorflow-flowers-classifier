@@ -10,14 +10,14 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
 
-from ml_runner.models.SequentialModel import SequentialModel
+from models.SequentialModel import SequentialModel
 
 
 # Some Definitions
 TRAINING_EPOCHS = 2
-BATCH_SIZE = 32
-IMG_HEIGHT = 180
-IMG_WIDTH = 180
+BATCH_SIZE = 8
+IMG_HEIGHT = 224
+IMG_WIDTH = 224
 AUTOTUNE = tf.data.AUTOTUNE
 MODEL_SAVE_PATH = "./model_save/weights"
 
@@ -91,7 +91,7 @@ def train_model(n_epochs, seq_model, train_ds, val_ds):
     return history
 
 
-def predict_from_file(seq_model, img_filename):
+def predict_from_file(seq_model, img_filename, class_names):
     """
     Load an image and predict using the trained Model.
     Args:
@@ -157,7 +157,7 @@ def run_predict(filename):
     # Load model weights from Tensorflow saving.
     seq_model.load(MODEL_SAVE_PATH)
     
-    predict_from_file(seq_model, filename) 
+    predict_from_file(seq_model, filename, class_names) 
     
     print("Finisihed predictions.")
 
