@@ -9,6 +9,9 @@ __pycache__/
 # Saved model
 model_save/*
 
+# Log CSVs
+logs/*
+
 .DS_Store
 
 # Distribution / packaging
