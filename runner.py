@@ -10,17 +10,19 @@ from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
 
 from models.SequentialModel import SequentialModel
+from csv_log_writer import csv_log_writer
 
 
 # Adjust TF log level
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 # Some Definitions
-TRAINING_EPOCHS = 2
-BATCH_SIZE = 64
-IMG_HEIGHT = 256
-IMG_WIDTH = 256
+TRAINING_EPOCHS = 4
+BATCH_SIZE = 128
+IMG_HEIGHT = 224
+IMG_WIDTH = 224
 MODEL_SAVE_PATH = "./model_save/weights"
+CSV_LOG_FILE = "./logs/output_log.csv"
 
 
 parser = argparse.ArgumentParser()
@@ -110,7 +112,7 @@ def predict_from_file(seq_model, img_filename, class_names):
     score = tf.nn.softmax(predictions[0])
 
     print(
-        "PREDICT: This image most likely belongs to {} with a {:.2f} percent confidence."
+        "==> PREDICT: This image most likely belongs to {} with a {:.2f} percent confidence."
         .format(class_names[np.argmax(score)], 100 * np.max(score))
     )
 
@@ -136,7 +138,7 @@ def run_training(n_epochs):
     if not args.nosave:
         seq_model.save(MODEL_SAVE_PATH) 
 
-    print("Finished training.")
+    csv_log_writer.write_log(history.history, CSV_LOG_FILE)
 
     return history.history
 
@@ -158,8 +160,6 @@ def run_predict(filename):
     
     predict_from_file(seq_model, filename, class_names) 
     
-    print("Finisihed predictions.")
-
 
 
 if __name__ == "__main__":

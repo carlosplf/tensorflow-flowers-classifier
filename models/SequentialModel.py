@@ -25,11 +25,12 @@ class SequentialModel:
         self.model = Sequential([
             data_augmentation,
             layers.Conv2D(64, 5, padding='same', activation='relu'),
-            layers.AveragePooling2D(pool_size=(2, 2), strides=None, padding='valid'),
-            layers.Conv2D(16, 2, padding='same', activation='relu'),
+            layers.MaxPooling2D(),
+            layers.Conv2D(16, 3, padding='same', activation='relu'),
             layers.MaxPooling2D(),
             layers.Flatten(),
             layers.Dense(256, activation='relu'),
+            layers.Dense(64, activation='relu'),
             layers.Dense(num_classes)
         ])
 
