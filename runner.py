@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 import PIL
@@ -13,12 +12,14 @@ from tensorflow.keras.models import Sequential
 from models.SequentialModel import SequentialModel
 
 
+# Adjust TF log level
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
 # Some Definitions
 TRAINING_EPOCHS = 2
-BATCH_SIZE = 8
-IMG_HEIGHT = 224
-IMG_WIDTH = 224
-AUTOTUNE = tf.data.AUTOTUNE
+BATCH_SIZE = 64
+IMG_HEIGHT = 256
+IMG_WIDTH = 256
 MODEL_SAVE_PATH = "./model_save/weights"
 
 
@@ -31,7 +32,6 @@ parser.add_argument("--nosave",
 parser.add_argument("-p", "--predict", type=str,
                     help="Predict an image class. -p <IMG_PATH>")
 args = parser.parse_args()
-
 
 def download_dataset():
     dataset_url = "https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz"
@@ -47,26 +47,26 @@ def check_dataset(data_dir):
 
 
 def create_train_dataset(data_dir):
-    train_ds = tf.keras.utils.image_dataset_from_directory(
-        data_dir,
-        validation_split=0.2,
-        subset="training",
-        seed=102030,
-        image_size=(IMG_HEIGHT, IMG_WIDTH),
-        batch_size=BATCH_SIZE
+    img_gen = tf.keras.preprocessing.image.ImageDataGenerator(
+        rescale=1./255,
+        horizontal_flip=False,
     )
+
+    train_ds = img_gen.flow_from_directory(data_dir, batch_size=BATCH_SIZE, shuffle=True, class_mode='sparse', subset="training", target_size=(IMG_HEIGHT, IMG_WIDTH))
+    print(len(train_ds))
+
     return train_ds
 
 
 def create_validation_dataset(data_dir):
-    val_ds = tf.keras.utils.image_dataset_from_directory(
-        data_dir,
-        validation_split=0.2,
-        subset="validation",
-        seed=123,
-        image_size=(IMG_HEIGHT, IMG_WIDTH),
-        batch_size=BATCH_SIZE
+    img_gen = tf.keras.preprocessing.image.ImageDataGenerator(
+        rescale=1./255,
+        horizontal_flip=False,
+        validation_split=0.2
     )
+
+    val_ds = img_gen.flow_from_directory(data_dir, batch_size=BATCH_SIZE, shuffle=True, class_mode='sparse', subset="validation", target_size=(IMG_HEIGHT, IMG_WIDTH))
+    print(len(val_ds))
     return val_ds
 
 
@@ -100,10 +100,10 @@ def predict_from_file(seq_model, img_filename, class_names):
     Return: None.
     """
 
-    img = tf.keras.utils.load_img(
+    img = tf.keras.preprocessing.image.load_img(
         img_filename, target_size=(IMG_HEIGHT, IMG_WIDTH)
     )
-    img_array = tf.keras.utils.img_to_array(img)
+    img_array = tf.keras.preprocessing.image.img_to_array(img)
     img_array = tf.expand_dims(img_array, 0)
 
     predictions = seq_model.model.predict(img_array)
@@ -124,11 +124,10 @@ def run_training(n_epochs):
     data_dir = download_dataset()
     check_dataset(data_dir)
     train_ds = create_train_dataset(data_dir)
-    class_names = train_ds.class_names
+    # class_names = train_ds.class_names
     val_ds = create_validation_dataset(data_dir)
-    train_ds, val_ds = tune_models(train_ds, val_ds)
 
-    num_classes = len(class_names)
+    num_classes = 5
 
     seq_model = create_model(num_classes)
 
@@ -149,9 +148,9 @@ def run_predict(filename):
     # TODO: Loading train_ds just to get number of classes. Need to change that.
     data_dir = download_dataset()
     train_ds = create_train_dataset(data_dir)
-    class_names = train_ds.class_names
+    class_names = list(train_ds.class_indices.keys())
     num_classes = len(class_names)
-    
+
     seq_model = create_model(num_classes)
 
     # Load model weights from Tensorflow saving.
