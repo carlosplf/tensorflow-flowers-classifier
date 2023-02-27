@@ -17,10 +17,9 @@ from csv_log_writer import csv_log_writer
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 # Some Definitions
-TRAINING_EPOCHS = 4
-BATCH_SIZE = 128
-IMG_HEIGHT = 224
-IMG_WIDTH = 224
+BATCH_SIZE = 32
+IMG_HEIGHT = 160
+IMG_WIDTH = 160
 MODEL_SAVE_PATH = "./model_save/weights"
 CSV_LOG_FILE = "./logs/output_log.csv"
 
@@ -126,7 +125,6 @@ def run_training(n_epochs):
     data_dir = download_dataset()
     check_dataset(data_dir)
     train_ds = create_train_dataset(data_dir)
-    # class_names = train_ds.class_names
     val_ds = create_validation_dataset(data_dir)
 
     num_classes = 5
