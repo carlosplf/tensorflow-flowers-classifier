@@ -1,14 +1,16 @@
 # Tensorflow Flowers Classifier
 
-Flower image classifier based on Tensorflow tutorial.
+This is a simple Tenforflow Convolutional Neural Network implementation to classify flowers.
+
 
 ## How to run
 
-Note: some requirements are for Apple M1 chip.
+Note: the project contains two requirements files, one for ROCM and other for Apple M1 chip.
 
-`pip install -r requirements.txt`
+I managed to run TF with my RX580 GPU using [this guide](https://github.com/Grench6/RX580-rocM-tensorflow-ubuntu20.4-guide).
 
-The software contains a RUN file in `ml_runner` folder. The `runner.py` can be called by the Flask API, or manually.
+`pip install -r <REQUIREMENTS_FILE.txt>`
+
 
 #### Running manually:
 
@@ -19,3 +21,12 @@ If you don't want to save the weights, add the `--nosave` option.
 Note that when predicting, the system will try to load saved weights.
 
 `python runner.py -p <image_path>` to ask the Model to classify some flower image.
+
+
+## Performance
+
+I trained the model with 100 epochs, and got the following results:
+
+![This is an image](/screenshots/ml-flowers-accuracy.png)
+
+The `test_images/` folder have some extra flower images to test the network.
